@@ -125,7 +125,7 @@ app.get('/trails', async(req, res) => {
     }
 });
 
-app.get('/yelp', async(req, res) => {
+app.get('/reviews', async(req, res) => {
     try {
         const userLat = req.query.latitude;
         const userLon = req.query.longitude;
