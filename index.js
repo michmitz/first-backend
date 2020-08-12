@@ -8,11 +8,10 @@ const port = process.env.PORT || 3000;
 
 app.use(cors());
 
-const { GEOCODE_API_KEY, WEATHERBIT_API_KEY, HIKING_API_KEY } = process.env;
+const { GEOCODE_API_KEY, WEATHERBIT_API_KEY, HIKING_API_KEY, YELP_API_KEY } = process.env;
 
 async function getWeather(lat, lon) {
     const response = await request.get(`https://api.weatherbit.io/v2.0/forecast/daily?&lat=${lat}&lon=${lon}&key=${WEATHERBIT_API_KEY}`);
-    // const data = weatherData.data;
 
     const forecastArray = response.body.data.map((weatherItem) => {
         return {
@@ -22,7 +21,9 @@ async function getWeather(lat, lon) {
 
     });
 
-    return forecastArray;
+    const slicedForecast = forecastArray.slice(0, 8);
+
+    return slicedForecast;
 }
 
 async function getTrails(lat, lon) {
@@ -47,10 +48,10 @@ async function getTrails(lat, lon) {
 
     });
 
-    return trailsArray;
+    const slicedTrails = trailsArray.slice(0, 10);
+
+    return slicedTrails;
 }
-
-
 
 
 async function getLatLong(cityName) {
@@ -64,6 +65,29 @@ async function getLatLong(cityName) {
         longitude: city.lon,
     };
 }
+
+async function getYelp(lat, lon) {
+    const response = await request.get(`https://api.yelp.com/v3/businesses/search?latitude=${lat}&longitude=${lon}`).set('Authorization', `Bearer ${YELP_API_KEY}`);
+
+    const yelpData = response.body.businesses;
+
+    const yelpArray = yelpData.map((yelpItem) => {
+        return {
+            name: yelpItem.name,
+            image_url: yelpItem.image_url,
+            price: yelpItem.price,
+            rating: yelpItem.rating,
+            url: yelpItem.url
+        };
+
+    });
+
+    const slicedReviews = yelpArray.slice(0, 10);
+
+    return slicedReviews;
+}
+
+
 
 app.get('/location', async(req, res) => {
     try {
@@ -95,6 +119,18 @@ app.get('/trails', async(req, res) => {
         const userLon = req.query.longitude;
 
         const mungedData = await getTrails(userLat, userLon);
+        res.json(mungedData);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.get('/yelp', async(req, res) => {
+    try {
+        const userLat = req.query.latitude;
+        const userLon = req.query.longitude;
+
+        const mungedData = await getYelp(userLat, userLon);
         res.json(mungedData);
     } catch (e) {
         res.status(500).json({ error: e.message });
